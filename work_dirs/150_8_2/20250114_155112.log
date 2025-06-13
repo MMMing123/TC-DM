@@ -1,0 +1,939 @@
+2025-01-14 15:51:14,491 - pyskl - INFO - Environment info:
+------------------------------------------------------------
+sys.platform: win32
+Python: 3.8.20 (default, Oct  3 2024, 15:19:54) [MSC v.1929 64 bit (AMD64)]
+CUDA available: True
+GPU 0: NVIDIA GeForce RTX 4060 Laptop GPU
+CUDA_HOME: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
+NVCC: Cuda compilation tools, release 11.8, V11.8.89
+MSVC: 用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.42.34435 版
+GCC: n/a
+PyTorch: 1.8.0
+PyTorch compiling details: PyTorch built with:
+  - C++ Version: 199711
+  - MSVC 192829337
+  - Intel(R) Math Kernel Library Version 2020.0.0 Product Build 20191125 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v1.7.0 (Git Hash 7aed236906b1f7a05c0917e5257a1af05e9ff683)
+  - OpenMP 2019
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.1
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_61,code=sm_61;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_37,code=compute_37
+  - CuDNN 8.0.5
+  - Magma 2.5.4
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.1, CUDNN_VERSION=8.0.5, CXX_COMPILER=C:/cb/pytorch_1000000000000/work/tmp_bin/sccache-cl.exe, CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc /w /bigobj -DUSE_PTHREADPOOL -openmp:experimental -DNDEBUG -DUSE_FBGEMM -DUSE_XNNPACK, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_VERSION=1.8.0, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=OFF, USE_NNPACK=OFF, USE_OPENMP=ON, 
+
+TorchVision: 0.9.0
+OpenCV: 4.10.0
+MMCV: 1.5.0
+MMCV Compiler: MSVC 192930137
+MMCV CUDA Compiler: 11.1
+pyskl: 0.1.0+
+------------------------------------------------------------
+
+2025-01-14 15:51:14,564 - pyskl - INFO - Config: model = dict(
+    type='RecognizerGCN',
+    backbone=dict(
+        type='STGCN',
+        gcn_adaptive='init',
+        gcn_with_res=True,
+        tcn_type='mstcn',
+        graph_cfg=dict(layout='drive_behavior', mode='spatial')),
+    cls_head=dict(type='GCNHead', num_classes=11, in_channels=256))
+dataset_type = 'PoseDataset'
+ann_file = 'training_file/2025_1_14.pkl'
+train_pipeline = [
+    dict(type='PreNormalize3D'),
+    dict(type='GenSkeFeat', dataset='drive_behavior', feats=['j']),
+    dict(type='UniformSample', clip_len=150),
+    dict(type='PoseDecode'),
+    dict(type='FormatGCNInput', num_person=1),
+    dict(type='Collect', keys=['keypoint', 'label'], meta_keys=[]),
+    dict(type='ToTensor', keys=['keypoint'])
+]
+val_pipeline = [
+    dict(type='PreNormalize3D'),
+    dict(type='GenSkeFeat', dataset='drive_behavior', feats=['j']),
+    dict(type='UniformSample', clip_len=150, num_clips=3),
+    dict(type='PoseDecode'),
+    dict(type='FormatGCNInput', num_person=1),
+    dict(type='Collect', keys=['keypoint', 'label'], meta_keys=[]),
+    dict(type='ToTensor', keys=['keypoint'])
+]
+test_pipeline = [
+    dict(type='PreNormalize3D'),
+    dict(type='GenSkeFeat', dataset='drive_behavior', feats=['j']),
+    dict(type='UniformSample', clip_len=150, num_clips=15),
+    dict(type='PoseDecode'),
+    dict(type='FormatGCNInput', num_person=1),
+    dict(type='Collect', keys=['keypoint', 'label'], meta_keys=[]),
+    dict(type='ToTensor', keys=['keypoint'])
+]
+data = dict(
+    videos_per_gpu=16,
+    workers_per_gpu=2,
+    test_dataloader=dict(videos_per_gpu=1),
+    train=dict(
+        type='RepeatDataset',
+        times=5,
+        dataset=dict(
+            type='PoseDataset',
+            ann_file='training_file/2025_1_14.pkl',
+            pipeline=[
+                dict(type='PreNormalize3D'),
+                dict(type='GenSkeFeat', dataset='drive_behavior', feats=['j']),
+                dict(type='UniformSample', clip_len=150),
+                dict(type='PoseDecode'),
+                dict(type='FormatGCNInput', num_person=1),
+                dict(type='Collect', keys=['keypoint', 'label'], meta_keys=[]),
+                dict(type='ToTensor', keys=['keypoint'])
+            ],
+            split='xsub_train')),
+    val=dict(
+        type='PoseDataset',
+        ann_file='training_file/2025_1_14.pkl',
+        pipeline=[
+            dict(type='PreNormalize3D'),
+            dict(type='GenSkeFeat', dataset='drive_behavior', feats=['j']),
+            dict(type='UniformSample', clip_len=150, num_clips=3),
+            dict(type='PoseDecode'),
+            dict(type='FormatGCNInput', num_person=1),
+            dict(type='Collect', keys=['keypoint', 'label'], meta_keys=[]),
+            dict(type='ToTensor', keys=['keypoint'])
+        ],
+        split='xsub_val'),
+    test=dict(
+        type='PoseDataset',
+        ann_file='training_file/2025_1_14.pkl',
+        pipeline=[
+            dict(type='PreNormalize3D'),
+            dict(type='GenSkeFeat', dataset='drive_behavior', feats=['j']),
+            dict(type='UniformSample', clip_len=150, num_clips=15),
+            dict(type='PoseDecode'),
+            dict(type='FormatGCNInput', num_person=1),
+            dict(type='Collect', keys=['keypoint', 'label'], meta_keys=[]),
+            dict(type='ToTensor', keys=['keypoint'])
+        ],
+        split='xsub_val'))
+optimizer = dict(
+    type='SGD', lr=0.005, momentum=0.9, weight_decay=0.0005, nesterov=True)
+optimizer_config = dict(grad_clip=None)
+lr_config = dict(policy='CosineAnnealing', min_lr=0, by_epoch=False)
+total_epochs = 120
+checkpoint_config = dict(interval=1)
+evaluation = dict(interval=1, metrics=['top_k_accuracy'])
+log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])
+log_level = 'INFO'
+work_dir = './work_dirs/150_8_2'
+gpu_ids = [0]
+
+2025-01-14 15:51:14,565 - pyskl - INFO - Set random seed to 558376861, deterministic: False
+2025-01-14 15:51:14,701 - pyskl - INFO - 231 videos remain after valid thresholding
+2025-01-14 15:51:17,764 - pyskl - INFO - 53 videos remain after valid thresholding
+2025-01-14 15:51:17,765 - pyskl - INFO - Start running, host: HWH@LAPTOP-P8L2TDGM, work_dir: D:\pyskl-skeleton\work_dirs\150_8_2
+2025-01-14 15:51:17,765 - pyskl - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) CosineAnnealingLrUpdaterHook       
+(NORMAL      ) CheckpointHook                     
+(NORMAL      ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) CosineAnnealingLrUpdaterHook       
+(NORMAL      ) DistSamplerSeedHook                
+(NORMAL      ) DistEvalHook                       
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) CosineAnnealingLrUpdaterHook       
+(NORMAL      ) DistEvalHook                       
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_train_iter:
+(ABOVE_NORMAL) OptimizerHook                      
+(NORMAL      ) CheckpointHook                     
+(NORMAL      ) DistEvalHook                       
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) CheckpointHook                     
+(NORMAL      ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) DistSamplerSeedHook                
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_epoch:
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+after_run:
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+2025-01-14 15:51:17,766 - pyskl - INFO - workflow: [('train', 1)], max: 120 epochs
+2025-01-14 15:51:17,767 - pyskl - INFO - Checkpoints will be saved to D:\pyskl-skeleton\work_dirs\150_8_2 by HardDiskBackend.
+2025-01-14 15:51:45,214 - pyskl - INFO - Saving checkpoint at 1 epochs
+2025-01-14 15:51:53,161 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:51:53,161 - pyskl - INFO - 
+top1_acc	0.2642
+top5_acc	0.7925
+2025-01-14 15:51:53,226 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_1.pth.
+2025-01-14 15:51:53,227 - pyskl - INFO - Best top1_acc is 0.2642 at 1 epoch.
+2025-01-14 15:51:53,227 - pyskl - INFO - Epoch(val) [1][4]	top1_acc: 0.2642, top5_acc: 0.7925
+2025-01-14 15:52:09,293 - pyskl - INFO - Saving checkpoint at 2 epochs
+2025-01-14 15:52:17,297 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:52:17,297 - pyskl - INFO - 
+top1_acc	0.3774
+top5_acc	0.8679
+2025-01-14 15:52:17,299 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_1.pth was removed
+2025-01-14 15:52:17,362 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_2.pth.
+2025-01-14 15:52:17,363 - pyskl - INFO - Best top1_acc is 0.3774 at 2 epoch.
+2025-01-14 15:52:17,363 - pyskl - INFO - Epoch(val) [2][4]	top1_acc: 0.3774, top5_acc: 0.8679
+2025-01-14 15:52:33,254 - pyskl - INFO - Saving checkpoint at 3 epochs
+2025-01-14 15:52:40,890 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:52:40,890 - pyskl - INFO - 
+top1_acc	0.3396
+top5_acc	0.9057
+2025-01-14 15:52:40,890 - pyskl - INFO - Epoch(val) [3][4]	top1_acc: 0.3396, top5_acc: 0.9057
+2025-01-14 15:52:56,759 - pyskl - INFO - Saving checkpoint at 4 epochs
+2025-01-14 15:53:04,657 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:53:04,657 - pyskl - INFO - 
+top1_acc	0.4528
+top5_acc	0.8679
+2025-01-14 15:53:04,658 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_2.pth was removed
+2025-01-14 15:53:04,719 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_4.pth.
+2025-01-14 15:53:04,719 - pyskl - INFO - Best top1_acc is 0.4528 at 4 epoch.
+2025-01-14 15:53:04,719 - pyskl - INFO - Epoch(val) [4][4]	top1_acc: 0.4528, top5_acc: 0.8679
+2025-01-14 15:53:20,528 - pyskl - INFO - Saving checkpoint at 5 epochs
+2025-01-14 15:53:28,038 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:53:28,038 - pyskl - INFO - 
+top1_acc	0.3774
+top5_acc	0.9245
+2025-01-14 15:53:28,038 - pyskl - INFO - Epoch(val) [5][4]	top1_acc: 0.3774, top5_acc: 0.9245
+2025-01-14 15:53:44,081 - pyskl - INFO - Saving checkpoint at 6 epochs
+2025-01-14 15:53:51,626 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:53:51,626 - pyskl - INFO - 
+top1_acc	0.4340
+top5_acc	0.9434
+2025-01-14 15:53:51,626 - pyskl - INFO - Epoch(val) [6][4]	top1_acc: 0.4340, top5_acc: 0.9434
+2025-01-14 15:54:07,737 - pyskl - INFO - Saving checkpoint at 7 epochs
+2025-01-14 15:54:16,629 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:54:16,629 - pyskl - INFO - 
+top1_acc	0.5849
+top5_acc	0.9057
+2025-01-14 15:54:16,629 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_4.pth was removed
+2025-01-14 15:54:16,691 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_7.pth.
+2025-01-14 15:54:16,691 - pyskl - INFO - Best top1_acc is 0.5849 at 7 epoch.
+2025-01-14 15:54:16,692 - pyskl - INFO - Epoch(val) [7][4]	top1_acc: 0.5849, top5_acc: 0.9057
+2025-01-14 15:54:33,754 - pyskl - INFO - Saving checkpoint at 8 epochs
+2025-01-14 15:54:42,262 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:54:42,262 - pyskl - INFO - 
+top1_acc	0.4717
+top5_acc	0.9057
+2025-01-14 15:54:42,262 - pyskl - INFO - Epoch(val) [8][4]	top1_acc: 0.4717, top5_acc: 0.9057
+2025-01-14 15:54:58,942 - pyskl - INFO - Saving checkpoint at 9 epochs
+2025-01-14 15:55:06,649 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:55:06,651 - pyskl - INFO - 
+top1_acc	0.5472
+top5_acc	0.9245
+2025-01-14 15:55:06,651 - pyskl - INFO - Epoch(val) [9][4]	top1_acc: 0.5472, top5_acc: 0.9245
+2025-01-14 15:55:22,538 - pyskl - INFO - Saving checkpoint at 10 epochs
+2025-01-14 15:55:30,428 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:55:30,429 - pyskl - INFO - 
+top1_acc	0.5849
+top5_acc	0.9623
+2025-01-14 15:55:30,429 - pyskl - INFO - Epoch(val) [10][4]	top1_acc: 0.5849, top5_acc: 0.9623
+2025-01-14 15:55:46,090 - pyskl - INFO - Saving checkpoint at 11 epochs
+2025-01-14 15:55:53,621 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:55:53,621 - pyskl - INFO - 
+top1_acc	0.6038
+top5_acc	0.9245
+2025-01-14 15:55:53,621 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_7.pth was removed
+2025-01-14 15:55:53,681 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_11.pth.
+2025-01-14 15:55:53,681 - pyskl - INFO - Best top1_acc is 0.6038 at 11 epoch.
+2025-01-14 15:55:53,682 - pyskl - INFO - Epoch(val) [11][4]	top1_acc: 0.6038, top5_acc: 0.9245
+2025-01-14 15:56:09,723 - pyskl - INFO - Saving checkpoint at 12 epochs
+2025-01-14 15:56:17,440 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:56:17,440 - pyskl - INFO - 
+top1_acc	0.5660
+top5_acc	0.8868
+2025-01-14 15:56:17,440 - pyskl - INFO - Epoch(val) [12][4]	top1_acc: 0.5660, top5_acc: 0.8868
+2025-01-14 15:56:33,216 - pyskl - INFO - Saving checkpoint at 13 epochs
+2025-01-14 15:56:40,823 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:56:40,824 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 15:56:40,825 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_11.pth was removed
+2025-01-14 15:56:40,888 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_13.pth.
+2025-01-14 15:56:40,888 - pyskl - INFO - Best top1_acc is 0.6792 at 13 epoch.
+2025-01-14 15:56:40,888 - pyskl - INFO - Epoch(val) [13][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 15:56:57,106 - pyskl - INFO - Saving checkpoint at 14 epochs
+2025-01-14 15:57:05,040 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:57:05,041 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 15:57:05,041 - pyskl - INFO - Epoch(val) [14][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 15:57:21,014 - pyskl - INFO - Saving checkpoint at 15 epochs
+2025-01-14 15:57:28,617 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:57:28,618 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9623
+2025-01-14 15:57:28,618 - pyskl - INFO - Epoch(val) [15][4]	top1_acc: 0.6792, top5_acc: 0.9623
+2025-01-14 15:57:44,360 - pyskl - INFO - Saving checkpoint at 16 epochs
+2025-01-14 15:57:52,198 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:57:52,199 - pyskl - INFO - 
+top1_acc	0.6415
+top5_acc	0.9811
+2025-01-14 15:57:52,199 - pyskl - INFO - Epoch(val) [16][4]	top1_acc: 0.6415, top5_acc: 0.9811
+2025-01-14 15:58:07,879 - pyskl - INFO - Saving checkpoint at 17 epochs
+2025-01-14 15:58:15,600 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:58:15,600 - pyskl - INFO - 
+top1_acc	0.6226
+top5_acc	0.9245
+2025-01-14 15:58:15,601 - pyskl - INFO - Epoch(val) [17][4]	top1_acc: 0.6226, top5_acc: 0.9245
+2025-01-14 15:58:31,189 - pyskl - INFO - Saving checkpoint at 18 epochs
+2025-01-14 15:58:38,793 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:58:38,794 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9057
+2025-01-14 15:58:38,795 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_13.pth was removed
+2025-01-14 15:58:38,858 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_18.pth.
+2025-01-14 15:58:38,858 - pyskl - INFO - Best top1_acc is 0.6981 at 18 epoch.
+2025-01-14 15:58:38,858 - pyskl - INFO - Epoch(val) [18][4]	top1_acc: 0.6981, top5_acc: 0.9057
+2025-01-14 15:58:54,939 - pyskl - INFO - Saving checkpoint at 19 epochs
+2025-01-14 15:59:02,983 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:59:02,984 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 15:59:02,985 - pyskl - INFO - Epoch(val) [19][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 15:59:18,677 - pyskl - INFO - Saving checkpoint at 20 epochs
+2025-01-14 15:59:26,406 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:59:26,406 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 15:59:26,408 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_18.pth was removed
+2025-01-14 15:59:26,479 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_20.pth.
+2025-01-14 15:59:26,480 - pyskl - INFO - Best top1_acc is 0.7170 at 20 epoch.
+2025-01-14 15:59:26,480 - pyskl - INFO - Epoch(val) [20][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 15:59:42,153 - pyskl - INFO - Saving checkpoint at 21 epochs
+2025-01-14 15:59:49,966 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 15:59:49,966 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 15:59:49,966 - pyskl - INFO - Epoch(val) [21][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 16:00:05,898 - pyskl - INFO - Saving checkpoint at 22 epochs
+2025-01-14 16:00:13,551 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:00:13,552 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 16:00:13,552 - pyskl - INFO - Epoch(val) [22][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 16:00:29,454 - pyskl - INFO - Saving checkpoint at 23 epochs
+2025-01-14 16:00:37,143 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:00:37,144 - pyskl - INFO - 
+top1_acc	0.6038
+top5_acc	0.8679
+2025-01-14 16:00:37,146 - pyskl - INFO - Epoch(val) [23][4]	top1_acc: 0.6038, top5_acc: 0.8679
+2025-01-14 16:00:52,863 - pyskl - INFO - Saving checkpoint at 24 epochs
+2025-01-14 16:01:00,614 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:01:00,614 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9434
+2025-01-14 16:01:00,614 - pyskl - INFO - Epoch(val) [24][4]	top1_acc: 0.7170, top5_acc: 0.9434
+2025-01-14 16:01:16,618 - pyskl - INFO - Saving checkpoint at 25 epochs
+2025-01-14 16:01:24,335 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:01:24,335 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9811
+2025-01-14 16:01:24,336 - pyskl - INFO - Epoch(val) [25][4]	top1_acc: 0.6792, top5_acc: 0.9811
+2025-01-14 16:01:40,209 - pyskl - INFO - Saving checkpoint at 26 epochs
+2025-01-14 16:01:47,963 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:01:47,963 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9245
+2025-01-14 16:01:47,964 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_20.pth was removed
+2025-01-14 16:01:48,019 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_26.pth.
+2025-01-14 16:01:48,019 - pyskl - INFO - Best top1_acc is 0.7547 at 26 epoch.
+2025-01-14 16:01:48,020 - pyskl - INFO - Epoch(val) [26][4]	top1_acc: 0.7547, top5_acc: 0.9245
+2025-01-14 16:02:03,848 - pyskl - INFO - Saving checkpoint at 27 epochs
+2025-01-14 16:02:11,539 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:02:11,540 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 16:02:11,540 - pyskl - INFO - Epoch(val) [27][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 16:02:27,505 - pyskl - INFO - Saving checkpoint at 28 epochs
+2025-01-14 16:02:35,301 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:02:35,301 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9434
+2025-01-14 16:02:35,301 - pyskl - INFO - Epoch(val) [28][4]	top1_acc: 0.7547, top5_acc: 0.9434
+2025-01-14 16:02:51,007 - pyskl - INFO - Saving checkpoint at 29 epochs
+2025-01-14 16:02:58,764 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:02:58,764 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9245
+2025-01-14 16:02:58,764 - pyskl - INFO - Epoch(val) [29][4]	top1_acc: 0.6981, top5_acc: 0.9245
+2025-01-14 16:03:14,986 - pyskl - INFO - Saving checkpoint at 30 epochs
+2025-01-14 16:03:22,708 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:03:22,715 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9057
+2025-01-14 16:03:22,715 - pyskl - INFO - Epoch(val) [30][4]	top1_acc: 0.6604, top5_acc: 0.9057
+2025-01-14 16:03:38,214 - pyskl - INFO - Saving checkpoint at 31 epochs
+2025-01-14 16:03:46,031 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:03:46,032 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:03:46,032 - pyskl - INFO - Epoch(val) [31][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:04:01,692 - pyskl - INFO - Saving checkpoint at 32 epochs
+2025-01-14 16:04:09,294 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:04:09,294 - pyskl - INFO - 
+top1_acc	0.5849
+top5_acc	0.9245
+2025-01-14 16:04:09,294 - pyskl - INFO - Epoch(val) [32][4]	top1_acc: 0.5849, top5_acc: 0.9245
+2025-01-14 16:04:25,636 - pyskl - INFO - Saving checkpoint at 33 epochs
+2025-01-14 16:04:33,484 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:04:33,484 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9245
+2025-01-14 16:04:33,490 - pyskl - INFO - Epoch(val) [33][4]	top1_acc: 0.6604, top5_acc: 0.9245
+2025-01-14 16:04:49,123 - pyskl - INFO - Saving checkpoint at 34 epochs
+2025-01-14 16:04:56,682 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:04:56,682 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9434
+2025-01-14 16:04:56,683 - pyskl - INFO - Epoch(val) [34][4]	top1_acc: 0.7170, top5_acc: 0.9434
+2025-01-14 16:05:12,807 - pyskl - INFO - Saving checkpoint at 35 epochs
+2025-01-14 16:05:20,472 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:05:20,472 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:05:20,473 - pyskl - INFO - Epoch(val) [35][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:05:36,370 - pyskl - INFO - Saving checkpoint at 36 epochs
+2025-01-14 16:05:44,086 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:05:44,087 - pyskl - INFO - 
+top1_acc	0.7736
+top5_acc	0.9623
+2025-01-14 16:05:44,088 - pyskl - INFO - The previous best checkpoint D:\pyskl-skeleton\work_dirs\150_8_2\best_top1_acc_epoch_26.pth was removed
+2025-01-14 16:05:44,160 - pyskl - INFO - Now best checkpoint is saved as best_top1_acc_epoch_36.pth.
+2025-01-14 16:05:44,160 - pyskl - INFO - Best top1_acc is 0.7736 at 36 epoch.
+2025-01-14 16:05:44,160 - pyskl - INFO - Epoch(val) [36][4]	top1_acc: 0.7736, top5_acc: 0.9623
+2025-01-14 16:05:59,970 - pyskl - INFO - Saving checkpoint at 37 epochs
+2025-01-14 16:06:07,656 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:06:07,656 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9434
+2025-01-14 16:06:07,656 - pyskl - INFO - Epoch(val) [37][4]	top1_acc: 0.6604, top5_acc: 0.9434
+2025-01-14 16:06:23,537 - pyskl - INFO - Saving checkpoint at 38 epochs
+2025-01-14 16:06:31,353 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:06:31,353 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:06:31,353 - pyskl - INFO - Epoch(val) [38][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:06:47,132 - pyskl - INFO - Saving checkpoint at 39 epochs
+2025-01-14 16:06:54,854 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:06:54,857 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9057
+2025-01-14 16:06:54,859 - pyskl - INFO - Epoch(val) [39][4]	top1_acc: 0.6792, top5_acc: 0.9057
+2025-01-14 16:07:10,713 - pyskl - INFO - Saving checkpoint at 40 epochs
+2025-01-14 16:07:18,235 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:07:18,236 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9434
+2025-01-14 16:07:18,236 - pyskl - INFO - Epoch(val) [40][4]	top1_acc: 0.6604, top5_acc: 0.9434
+2025-01-14 16:07:34,180 - pyskl - INFO - Saving checkpoint at 41 epochs
+2025-01-14 16:07:41,843 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:07:41,843 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9434
+2025-01-14 16:07:41,843 - pyskl - INFO - Epoch(val) [41][4]	top1_acc: 0.6604, top5_acc: 0.9434
+2025-01-14 16:07:57,656 - pyskl - INFO - Saving checkpoint at 42 epochs
+2025-01-14 16:08:05,430 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:08:05,431 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9245
+2025-01-14 16:08:05,431 - pyskl - INFO - Epoch(val) [42][4]	top1_acc: 0.7170, top5_acc: 0.9245
+2025-01-14 16:08:21,626 - pyskl - INFO - Saving checkpoint at 43 epochs
+2025-01-14 16:08:29,227 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:08:29,227 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:08:29,227 - pyskl - INFO - Epoch(val) [43][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:08:45,224 - pyskl - INFO - Saving checkpoint at 44 epochs
+2025-01-14 16:08:52,811 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:08:52,811 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9245
+2025-01-14 16:08:52,811 - pyskl - INFO - Epoch(val) [44][4]	top1_acc: 0.7358, top5_acc: 0.9245
+2025-01-14 16:09:08,759 - pyskl - INFO - Saving checkpoint at 45 epochs
+2025-01-14 16:09:16,742 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:09:16,742 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9245
+2025-01-14 16:09:16,743 - pyskl - INFO - Epoch(val) [45][4]	top1_acc: 0.6981, top5_acc: 0.9245
+2025-01-14 16:09:32,516 - pyskl - INFO - Saving checkpoint at 46 epochs
+2025-01-14 16:09:40,202 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:09:40,202 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:09:40,202 - pyskl - INFO - Epoch(val) [46][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:09:56,129 - pyskl - INFO - Saving checkpoint at 47 epochs
+2025-01-14 16:10:03,805 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:10:03,805 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9057
+2025-01-14 16:10:03,805 - pyskl - INFO - Epoch(val) [47][4]	top1_acc: 0.6792, top5_acc: 0.9057
+2025-01-14 16:10:19,700 - pyskl - INFO - Saving checkpoint at 48 epochs
+2025-01-14 16:10:27,398 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:10:27,399 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 16:10:27,399 - pyskl - INFO - Epoch(val) [48][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 16:10:43,157 - pyskl - INFO - Saving checkpoint at 49 epochs
+2025-01-14 16:10:50,783 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:10:50,783 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9623
+2025-01-14 16:10:50,783 - pyskl - INFO - Epoch(val) [49][4]	top1_acc: 0.6792, top5_acc: 0.9623
+2025-01-14 16:11:06,479 - pyskl - INFO - Saving checkpoint at 50 epochs
+2025-01-14 16:11:14,180 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:11:14,180 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:11:14,180 - pyskl - INFO - Epoch(val) [50][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:11:30,048 - pyskl - INFO - Saving checkpoint at 51 epochs
+2025-01-14 16:11:37,782 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:11:37,782 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:11:37,783 - pyskl - INFO - Epoch(val) [51][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:11:53,881 - pyskl - INFO - Saving checkpoint at 52 epochs
+2025-01-14 16:12:01,604 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:12:01,605 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9434
+2025-01-14 16:12:01,605 - pyskl - INFO - Epoch(val) [52][4]	top1_acc: 0.7170, top5_acc: 0.9434
+2025-01-14 16:12:17,431 - pyskl - INFO - Saving checkpoint at 53 epochs
+2025-01-14 16:12:25,158 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:12:25,159 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9434
+2025-01-14 16:12:25,159 - pyskl - INFO - Epoch(val) [53][4]	top1_acc: 0.7358, top5_acc: 0.9434
+2025-01-14 16:12:41,397 - pyskl - INFO - Saving checkpoint at 54 epochs
+2025-01-14 16:12:48,967 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:12:48,967 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9434
+2025-01-14 16:12:48,968 - pyskl - INFO - Epoch(val) [54][4]	top1_acc: 0.6604, top5_acc: 0.9434
+2025-01-14 16:13:04,683 - pyskl - INFO - Saving checkpoint at 55 epochs
+2025-01-14 16:13:12,147 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:13:12,147 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9434
+2025-01-14 16:13:12,148 - pyskl - INFO - Epoch(val) [55][4]	top1_acc: 0.7358, top5_acc: 0.9434
+2025-01-14 16:13:28,063 - pyskl - INFO - Saving checkpoint at 56 epochs
+2025-01-14 16:13:35,733 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:13:35,733 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:13:35,734 - pyskl - INFO - Epoch(val) [56][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:13:51,287 - pyskl - INFO - Saving checkpoint at 57 epochs
+2025-01-14 16:13:58,919 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:13:58,919 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:13:58,920 - pyskl - INFO - Epoch(val) [57][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:14:15,177 - pyskl - INFO - Saving checkpoint at 58 epochs
+2025-01-14 16:14:22,914 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:14:22,915 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:14:22,915 - pyskl - INFO - Epoch(val) [58][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:14:39,012 - pyskl - INFO - Saving checkpoint at 59 epochs
+2025-01-14 16:14:46,726 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:14:46,726 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9434
+2025-01-14 16:14:46,726 - pyskl - INFO - Epoch(val) [59][4]	top1_acc: 0.7170, top5_acc: 0.9434
+2025-01-14 16:15:02,769 - pyskl - INFO - Saving checkpoint at 60 epochs
+2025-01-14 16:15:10,519 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:15:10,519 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9623
+2025-01-14 16:15:10,519 - pyskl - INFO - Epoch(val) [60][4]	top1_acc: 0.6604, top5_acc: 0.9623
+2025-01-14 16:15:26,345 - pyskl - INFO - Saving checkpoint at 61 epochs
+2025-01-14 16:15:34,096 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:15:34,096 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:15:34,096 - pyskl - INFO - Epoch(val) [61][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:15:50,031 - pyskl - INFO - Saving checkpoint at 62 epochs
+2025-01-14 16:15:57,703 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:15:57,703 - pyskl - INFO - 
+top1_acc	0.6226
+top5_acc	0.9623
+2025-01-14 16:15:57,703 - pyskl - INFO - Epoch(val) [62][4]	top1_acc: 0.6226, top5_acc: 0.9623
+2025-01-14 16:16:13,735 - pyskl - INFO - Saving checkpoint at 63 epochs
+2025-01-14 16:16:21,712 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:16:21,712 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9434
+2025-01-14 16:16:21,712 - pyskl - INFO - Epoch(val) [63][4]	top1_acc: 0.7358, top5_acc: 0.9434
+2025-01-14 16:16:37,533 - pyskl - INFO - Saving checkpoint at 64 epochs
+2025-01-14 16:16:45,095 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:16:45,095 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:16:45,095 - pyskl - INFO - Epoch(val) [64][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:17:00,985 - pyskl - INFO - Saving checkpoint at 65 epochs
+2025-01-14 16:17:08,698 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:17:08,698 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:17:08,699 - pyskl - INFO - Epoch(val) [65][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:17:24,521 - pyskl - INFO - Saving checkpoint at 66 epochs
+2025-01-14 16:17:32,096 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:17:32,097 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:17:32,097 - pyskl - INFO - Epoch(val) [66][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:17:47,906 - pyskl - INFO - Saving checkpoint at 67 epochs
+2025-01-14 16:17:55,476 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:17:55,476 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9434
+2025-01-14 16:17:55,477 - pyskl - INFO - Epoch(val) [67][4]	top1_acc: 0.7547, top5_acc: 0.9434
+2025-01-14 16:18:11,182 - pyskl - INFO - Saving checkpoint at 68 epochs
+2025-01-14 16:18:19,047 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:18:19,047 - pyskl - INFO - 
+top1_acc	0.6415
+top5_acc	0.9623
+2025-01-14 16:18:19,047 - pyskl - INFO - Epoch(val) [68][4]	top1_acc: 0.6415, top5_acc: 0.9623
+2025-01-14 16:18:34,951 - pyskl - INFO - Saving checkpoint at 69 epochs
+2025-01-14 16:18:42,627 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:18:42,627 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9623
+2025-01-14 16:18:42,627 - pyskl - INFO - Epoch(val) [69][4]	top1_acc: 0.6604, top5_acc: 0.9623
+2025-01-14 16:18:58,419 - pyskl - INFO - Saving checkpoint at 70 epochs
+2025-01-14 16:19:06,264 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:19:06,264 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:19:06,264 - pyskl - INFO - Epoch(val) [70][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:19:22,326 - pyskl - INFO - Saving checkpoint at 71 epochs
+2025-01-14 16:19:29,837 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:19:29,837 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9434
+2025-01-14 16:19:29,837 - pyskl - INFO - Epoch(val) [71][4]	top1_acc: 0.7170, top5_acc: 0.9434
+2025-01-14 16:19:45,674 - pyskl - INFO - Saving checkpoint at 72 epochs
+2025-01-14 16:19:53,627 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:19:53,627 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:19:53,628 - pyskl - INFO - Epoch(val) [72][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:20:09,493 - pyskl - INFO - Saving checkpoint at 73 epochs
+2025-01-14 16:20:17,310 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:20:17,311 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:20:17,311 - pyskl - INFO - Epoch(val) [73][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:20:33,735 - pyskl - INFO - Saving checkpoint at 74 epochs
+2025-01-14 16:20:41,449 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:20:41,449 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:20:41,450 - pyskl - INFO - Epoch(val) [74][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:20:57,405 - pyskl - INFO - Saving checkpoint at 75 epochs
+2025-01-14 16:21:05,212 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:21:05,213 - pyskl - INFO - 
+top1_acc	0.6604
+top5_acc	0.9434
+2025-01-14 16:21:05,213 - pyskl - INFO - Epoch(val) [75][4]	top1_acc: 0.6604, top5_acc: 0.9434
+2025-01-14 16:21:21,373 - pyskl - INFO - Saving checkpoint at 76 epochs
+2025-01-14 16:21:29,034 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:21:29,034 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:21:29,034 - pyskl - INFO - Epoch(val) [76][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:21:45,114 - pyskl - INFO - Saving checkpoint at 77 epochs
+2025-01-14 16:21:53,016 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:21:53,017 - pyskl - INFO - 
+top1_acc	0.6415
+top5_acc	0.9623
+2025-01-14 16:21:53,017 - pyskl - INFO - Epoch(val) [77][4]	top1_acc: 0.6415, top5_acc: 0.9623
+2025-01-14 16:22:08,675 - pyskl - INFO - Saving checkpoint at 78 epochs
+2025-01-14 16:22:16,409 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:22:16,409 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:22:16,409 - pyskl - INFO - Epoch(val) [78][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:22:32,539 - pyskl - INFO - Saving checkpoint at 79 epochs
+2025-01-14 16:22:40,201 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:22:40,201 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:22:40,202 - pyskl - INFO - Epoch(val) [79][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:22:56,518 - pyskl - INFO - Saving checkpoint at 80 epochs
+2025-01-14 16:23:04,378 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:23:04,378 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:23:04,378 - pyskl - INFO - Epoch(val) [80][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:23:19,986 - pyskl - INFO - Saving checkpoint at 81 epochs
+2025-01-14 16:23:27,573 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:23:27,573 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:23:27,574 - pyskl - INFO - Epoch(val) [81][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:23:43,423 - pyskl - INFO - Saving checkpoint at 82 epochs
+2025-01-14 16:23:51,187 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:23:51,187 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:23:51,187 - pyskl - INFO - Epoch(val) [82][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:24:06,842 - pyskl - INFO - Saving checkpoint at 83 epochs
+2025-01-14 16:24:14,367 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:24:14,367 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:24:14,367 - pyskl - INFO - Epoch(val) [83][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:24:30,383 - pyskl - INFO - Saving checkpoint at 84 epochs
+2025-01-14 16:24:38,161 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:24:38,161 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:24:38,162 - pyskl - INFO - Epoch(val) [84][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:24:54,216 - pyskl - INFO - Saving checkpoint at 85 epochs
+2025-01-14 16:25:02,576 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:25:02,577 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:25:02,577 - pyskl - INFO - Epoch(val) [85][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:25:18,349 - pyskl - INFO - Saving checkpoint at 86 epochs
+2025-01-14 16:25:25,952 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:25:25,952 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 16:25:25,952 - pyskl - INFO - Epoch(val) [86][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 16:25:41,813 - pyskl - INFO - Saving checkpoint at 87 epochs
+2025-01-14 16:25:49,564 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:25:49,564 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:25:49,565 - pyskl - INFO - Epoch(val) [87][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:26:05,806 - pyskl - INFO - Saving checkpoint at 88 epochs
+2025-01-14 16:26:13,334 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:26:13,334 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:26:13,334 - pyskl - INFO - Epoch(val) [88][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:26:29,405 - pyskl - INFO - Saving checkpoint at 89 epochs
+2025-01-14 16:26:37,303 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:26:37,303 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9245
+2025-01-14 16:26:37,304 - pyskl - INFO - Epoch(val) [89][4]	top1_acc: 0.7358, top5_acc: 0.9245
+2025-01-14 16:26:53,074 - pyskl - INFO - Saving checkpoint at 90 epochs
+2025-01-14 16:27:00,724 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:27:00,724 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:27:00,724 - pyskl - INFO - Epoch(val) [90][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:27:14,305 - pyskl - INFO - Saving checkpoint at 91 epochs
+2025-01-14 16:27:22,062 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:27:22,062 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:27:22,062 - pyskl - INFO - Epoch(val) [91][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:27:37,656 - pyskl - INFO - Saving checkpoint at 92 epochs
+2025-01-14 16:27:45,257 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:27:45,257 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:27:45,257 - pyskl - INFO - Epoch(val) [92][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:28:01,135 - pyskl - INFO - Saving checkpoint at 93 epochs
+2025-01-14 16:28:08,857 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:28:08,857 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:28:08,858 - pyskl - INFO - Epoch(val) [93][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:28:24,523 - pyskl - INFO - Saving checkpoint at 94 epochs
+2025-01-14 16:28:32,253 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:28:32,254 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9434
+2025-01-14 16:28:32,254 - pyskl - INFO - Epoch(val) [94][4]	top1_acc: 0.7358, top5_acc: 0.9434
+2025-01-14 16:28:47,856 - pyskl - INFO - Saving checkpoint at 95 epochs
+2025-01-14 16:28:55,436 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:28:55,437 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9434
+2025-01-14 16:28:55,437 - pyskl - INFO - Epoch(val) [95][4]	top1_acc: 0.7547, top5_acc: 0.9434
+2025-01-14 16:29:11,334 - pyskl - INFO - Saving checkpoint at 96 epochs
+2025-01-14 16:29:19,009 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:29:19,009 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:29:19,009 - pyskl - INFO - Epoch(val) [96][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:29:34,757 - pyskl - INFO - Saving checkpoint at 97 epochs
+2025-01-14 16:29:42,464 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:29:42,464 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9434
+2025-01-14 16:29:42,464 - pyskl - INFO - Epoch(val) [97][4]	top1_acc: 0.6792, top5_acc: 0.9434
+2025-01-14 16:29:58,566 - pyskl - INFO - Saving checkpoint at 98 epochs
+2025-01-14 16:30:06,208 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:30:06,208 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9434
+2025-01-14 16:30:06,208 - pyskl - INFO - Epoch(val) [98][4]	top1_acc: 0.7358, top5_acc: 0.9434
+2025-01-14 16:30:21,988 - pyskl - INFO - Saving checkpoint at 99 epochs
+2025-01-14 16:30:29,621 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:30:29,621 - pyskl - INFO - 
+top1_acc	0.7736
+top5_acc	0.9434
+2025-01-14 16:30:29,621 - pyskl - INFO - Epoch(val) [99][4]	top1_acc: 0.7736, top5_acc: 0.9434
+2025-01-14 16:30:45,543 - pyskl - INFO - Saving checkpoint at 100 epochs
+2025-01-14 16:30:53,212 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:30:53,212 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:30:53,213 - pyskl - INFO - Epoch(val) [100][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:31:08,943 - pyskl - INFO - Saving checkpoint at 101 epochs
+2025-01-14 16:31:16,630 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:31:16,631 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:31:16,631 - pyskl - INFO - Epoch(val) [101][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:31:32,331 - pyskl - INFO - Saving checkpoint at 102 epochs
+2025-01-14 16:31:40,002 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:31:40,003 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9434
+2025-01-14 16:31:40,003 - pyskl - INFO - Epoch(val) [102][4]	top1_acc: 0.7547, top5_acc: 0.9434
+2025-01-14 16:31:55,515 - pyskl - INFO - Saving checkpoint at 103 epochs
+2025-01-14 16:32:03,423 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:32:03,423 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:32:03,423 - pyskl - INFO - Epoch(val) [103][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:32:19,184 - pyskl - INFO - Saving checkpoint at 104 epochs
+2025-01-14 16:32:26,757 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:32:26,758 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:32:26,758 - pyskl - INFO - Epoch(val) [104][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:32:42,555 - pyskl - INFO - Saving checkpoint at 105 epochs
+2025-01-14 16:32:50,588 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:32:50,588 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:32:50,588 - pyskl - INFO - Epoch(val) [105][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:33:06,696 - pyskl - INFO - Saving checkpoint at 106 epochs
+2025-01-14 16:33:14,369 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:33:14,370 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:33:14,370 - pyskl - INFO - Epoch(val) [106][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:33:30,296 - pyskl - INFO - Saving checkpoint at 107 epochs
+2025-01-14 16:33:37,958 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:33:37,958 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:33:37,958 - pyskl - INFO - Epoch(val) [107][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:33:53,758 - pyskl - INFO - Saving checkpoint at 108 epochs
+2025-01-14 16:34:01,372 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:34:01,372 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:34:01,372 - pyskl - INFO - Epoch(val) [108][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:34:17,507 - pyskl - INFO - Saving checkpoint at 109 epochs
+2025-01-14 16:34:25,148 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:34:25,148 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:34:25,148 - pyskl - INFO - Epoch(val) [109][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:34:41,105 - pyskl - INFO - Saving checkpoint at 110 epochs
+2025-01-14 16:34:48,762 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:34:48,762 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:34:48,762 - pyskl - INFO - Epoch(val) [110][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:35:04,451 - pyskl - INFO - Saving checkpoint at 111 epochs
+2025-01-14 16:35:12,147 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:35:12,147 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:35:12,147 - pyskl - INFO - Epoch(val) [111][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:35:28,003 - pyskl - INFO - Saving checkpoint at 112 epochs
+2025-01-14 16:35:35,933 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:35:35,933 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9623
+2025-01-14 16:35:35,933 - pyskl - INFO - Epoch(val) [112][4]	top1_acc: 0.6981, top5_acc: 0.9623
+2025-01-14 16:35:51,828 - pyskl - INFO - Saving checkpoint at 113 epochs
+2025-01-14 16:35:59,532 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:35:59,532 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:35:59,532 - pyskl - INFO - Epoch(val) [113][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:36:15,496 - pyskl - INFO - Saving checkpoint at 114 epochs
+2025-01-14 16:36:23,109 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:36:23,109 - pyskl - INFO - 
+top1_acc	0.6981
+top5_acc	0.9434
+2025-01-14 16:36:23,110 - pyskl - INFO - Epoch(val) [114][4]	top1_acc: 0.6981, top5_acc: 0.9434
+2025-01-14 16:36:39,106 - pyskl - INFO - Saving checkpoint at 115 epochs
+2025-01-14 16:36:46,694 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:36:46,694 - pyskl - INFO - 
+top1_acc	0.6792
+top5_acc	0.9623
+2025-01-14 16:36:46,695 - pyskl - INFO - Epoch(val) [115][4]	top1_acc: 0.6792, top5_acc: 0.9623
+2025-01-14 16:37:02,661 - pyskl - INFO - Saving checkpoint at 116 epochs
+2025-01-14 16:37:10,305 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:37:10,306 - pyskl - INFO - 
+top1_acc	0.7547
+top5_acc	0.9623
+2025-01-14 16:37:10,306 - pyskl - INFO - Epoch(val) [116][4]	top1_acc: 0.7547, top5_acc: 0.9623
+2025-01-14 16:37:26,305 - pyskl - INFO - Saving checkpoint at 117 epochs
+2025-01-14 16:37:34,073 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:37:34,073 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9434
+2025-01-14 16:37:34,073 - pyskl - INFO - Epoch(val) [117][4]	top1_acc: 0.7358, top5_acc: 0.9434
+2025-01-14 16:37:49,790 - pyskl - INFO - Saving checkpoint at 118 epochs
+2025-01-14 16:37:57,502 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:37:57,502 - pyskl - INFO - 
+top1_acc	0.7170
+top5_acc	0.9623
+2025-01-14 16:37:57,502 - pyskl - INFO - Epoch(val) [118][4]	top1_acc: 0.7170, top5_acc: 0.9623
+2025-01-14 16:38:13,606 - pyskl - INFO - Saving checkpoint at 119 epochs
+2025-01-14 16:38:21,295 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:38:21,295 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:38:21,295 - pyskl - INFO - Epoch(val) [119][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:38:37,158 - pyskl - INFO - Saving checkpoint at 120 epochs
+2025-01-14 16:38:44,684 - pyskl - INFO - Evaluating top_k_accuracy ...
+2025-01-14 16:38:44,684 - pyskl - INFO - 
+top1_acc	0.7358
+top5_acc	0.9623
+2025-01-14 16:38:44,684 - pyskl - INFO - Epoch(val) [120][4]	top1_acc: 0.7358, top5_acc: 0.9623
+2025-01-14 16:38:47,752 - pyskl - INFO - 53 videos remain after valid thresholding
+2025-01-14 16:38:56,412 - pyskl - INFO - Testing results of the last checkpoint
+2025-01-14 16:38:56,412 - pyskl - INFO - top1_acc: 0.7358
+2025-01-14 16:38:56,413 - pyskl - INFO - top5_acc: 0.9623
+2025-01-14 16:38:56,414 - pyskl - INFO - load checkpoint from local path: ./work_dirs/150_8_2\best_top1_acc_epoch_36.pth
+2025-01-14 16:39:05,176 - pyskl - INFO - Testing results of the best checkpoint
+2025-01-14 16:39:05,176 - pyskl - INFO - top1_acc: 0.7925
+2025-01-14 16:39:05,176 - pyskl - INFO - top5_acc: 0.9623
