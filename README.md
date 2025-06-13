@@ -25,7 +25,8 @@ For users who don't want to install Python and dependencies, we provide pre-comp
 
 1. **Download Executable**:
 
-   - Visit our Release Page : https://drive.google.com/file/d/17vWgmpwQ318tsDt09p0DPQa6mCNaFZiC/view?usp=sharing
+   - Visit our Release Page :
+   - https://drive.google.com/file/d/17vWgmpwQ318tsDt09p0DPQa6mCNaFZiC/view?usp=sharing
    - Download the latest `DrivingMonitor.7z` file
 
 2. **Unzip and Run**:
